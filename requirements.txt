@@ -1,0 +1,6 @@
+APScheduler==3.3.1
+pytz==2017.2
+redis==2.10.6
+six==1.10.0
+tornado==4.5.1
+tzlocal==1.4
