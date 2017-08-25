@@ -2,15 +2,34 @@
 # -*- coding:utf-8 -*-
 
 import os
+import json
 import logging
-from settings import *
+from datetime import datetime, timedelta
+from waker import waker
 from tornado.ioloop import IOLoop
-from apscheduler.schedulers.tornado import TornadoScheduler
+from tornado_json.routes import get_routes
+from tornado_json.application import Application
+
+logging.basicConfig(format="%(asctime)s:%(levelname)s:%(message)s", level=logging.DEBUG)
+
+def tick(type, repeat, sound_id):
+    logging.info(("%s %d %s") % (type, repeat, sound_id))
 
 def main():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    scheduler = TornadoScheduler()
-    scheduler.add_jobstore('redis', REDIS_HOST, REDIS_PORT)
+
+    wkr = waker()
+    
+    import api
+    routes = get_routes(api)
+    print("Routes\n======\n\n" + json.dumps(
+        [(url, repr(rh)) for url, rh in routes],
+        indent=2)
+    )
+
+    app = Application(routes=routes, settings={})
+    app.listen(8080)
+
     try:
         IOLoop.instance().start()
     except (KeyboardInterrupt, SystemExit):
