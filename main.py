@@ -19,7 +19,7 @@ def main():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     wkr = waker()
-    wkr.scheduler.add_job(waker.alarm_go_off, 'date', run_date=datetime.now()+timedelta(seconds=10), kwargs={"repeat":1, "level":"notify", "sound_id":"0"*32})
+    #wkr.scheduler.add_job(waker.alarm_go_off, 'date', run_date=datetime.now()+timedelta(seconds=10), kwargs={"repeat":1, "level":"notify", "sound_id":"0"*32})
     #wkr.scheduler.add_job(waker.alarm_go_off, kwargs={"repeat":1, "level":"notify", "sound_id":"0"*32})
 
     import api

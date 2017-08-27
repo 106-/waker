@@ -73,11 +73,15 @@ class schedules_handler(APIHandler):
             "sound_id":"e0d2bb157aa4b43ce69ff3dccc2dd81d",
             "level":"alarm",
             "repeat":0
-        }
+        },
+        output_schema = {
+            "type":"string"
+        },
+        output_example = "68d21c9612a34559b593e8001c2d0b87"
     )
     def post(self):
         """
-        post new alarm schedule.
+        post new alarm schedule. returns job id.
 
         * `time`: ISO8601 formatted string. this value means when alarm go off.
         * `sound_id`: random 32byte hexadecimal string. you can get filename->sound_id correspondence from /api/musics/. 
@@ -102,7 +106,8 @@ class schedules_handler(APIHandler):
             api_assert(False, log_message="repeat must be higer than zero.")
             return
 
-        waker().scheduler.add_job(waker.alarm_go_off, "date", run_date=d, kwargs={"repeat":repeat, "level":level, "sound_id":sound_id})
+        job = waker().scheduler.add_job(waker.alarm_go_off, "date", run_date=d, kwargs={"repeat":repeat, "level":level, "sound_id":sound_id})
+        return job.id
 
 class schedule_handler(schedules_handler):
     __urls__ = ["/api/schedules/(?P<id>[0-9a-f]{32})/?$"]
@@ -130,9 +135,54 @@ class schedule_handler(schedules_handler):
         job = waker().scheduler.get_job(id)
         if(not job):
             api_assert(False, log_message="no such alarm.")
+            return
         job_dict = {
             "id": job.id,
             "time": job.next_run_time.isoformat()
         }
         job_dict.update(job.kwargs)
         return job_dict
+
+    @schema.validate(
+        input_schema = {
+            "type":"object",
+            "properties":{
+                "time":{"type":"string"},
+                "sound_id":{"type":"string", "pattern":"[0-9a-f]{32}"},
+                "level":{"enum":ALARM_LEVELS},
+                "repeat":{"type":"number"}
+            }
+        },
+        input_example = {
+            "time":"2017-08-26T00:00:00.000000+09:00",
+            "sound_id":"e0d2bb157aa4b43ce69ff3dccc2dd81d",
+            "level":"alarm",
+            "repeat":0
+        }
+    )
+    def put(self, id):
+        job = waker().scheduler.get_job(id)
+        if(not job):
+            api_assert(False, log_message="no such alarm.")
+            return
+        mod_args = {}
+        for key in ["sound_id", "level", "repeat"]:
+            if(key in self.body):
+                mod_args[key] = self.body[key]
+            else:
+                mod_args[key] = job.kwargs[key]
+        mod_time = job.next_run_time
+        if("time" in self.body):
+            mod_time = iso8601.parse_date(self.body["time"])
+            if mod_time < datetime.datetime.now(tz=TIMEZONE):
+                api_assert(False, log_message="time must be later than present.")
+                return
+        job.modify(next_run_time=mod_time, kwargs=mod_args)
+
+    @schema.validate()   
+    def delete(self, id):
+        job = waker().scheduler.get_job(id)
+        if(not job):
+            api_assert(False, log_message="no such alarm.")
+            return
+        job.remove()
