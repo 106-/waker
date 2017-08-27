@@ -40,6 +40,7 @@ class schedules_handler(APIHandler):
         """
         get list of scheduled alarms.
 
+        ### output
         * `time`: ISO8601 formatted string. this value means when alarm go off. 
         * `id`: random 32byte hexadecimal string.
         * `sound_id`: random 32byte hexadecimal string.
@@ -83,11 +84,13 @@ class schedules_handler(APIHandler):
         """
         post new alarm schedule. returns job id.
 
+        ### input
         * `time`: ISO8601 formatted string. this value means when alarm go off.
-        * `sound_id`: random 32byte hexadecimal string. you can get filename->sound_id correspondence from /api/musics/. 
-                        if not set this value, waker may choose music randomly from same "level".
+        * `sound_id`: random 32byte hexadecimal string. you can get filename->sound_id correspondence from /api/musics/. if not set this value, waker may choose music randomly from same "level".
         * `level`: type of alarm. (i.e. "alarm","notify","warning")
         * `repeat`: number of repeat sound. 0 means "repeats indefinitely".
+        ### output
+        job id.
         """
         d = iso8601.parse_date(self.body["time"])
         if d < datetime.datetime.now(tz=TIMEZONE):
@@ -132,6 +135,15 @@ class schedule_handler(schedules_handler):
         }
     )
     def get(self, id):
+        """
+        get scheduled alarm.
+
+        * `time`: ISO8601 formatted string. this value means when alarm go off. 
+        * `id`: random 32byte hexadecimal string.
+        * `sound_id`: random 32byte hexadecimal string.
+        * `level`: type of alarm. (i.e. "alarm","notify","warning")
+        * `repeat`: number of repeat sound. 0 means "repeats indefinitely".
+        """
         job = waker().scheduler.get_job(id)
         if(not job):
             api_assert(False, log_message="no such alarm.")
@@ -161,6 +173,15 @@ class schedule_handler(schedules_handler):
         }
     )
     def put(self, id):
+        """
+        modify alarm schedule. values that do not change are not necessary.
+        
+        ### input
+        * `time`: ISO8601 formatted string. this value means when alarm go off. 
+        * `sound_id`: random 32byte hexadecimal string.
+        * `level`: type of alarm. (i.e. "alarm","notify","warning")
+        * `repeat`: number of repeat sound. 0 means "repeats indefinitely".
+        """
         job = waker().scheduler.get_job(id)
         if(not job):
             api_assert(False, log_message="no such alarm.")
@@ -179,8 +200,11 @@ class schedule_handler(schedules_handler):
                 return
         job.modify(next_run_time=mod_time, kwargs=mod_args)
 
-    @schema.validate()   
+    @schema.validate()
     def delete(self, id):
+        """
+        delete scheduled alarm.
+        """
         job = waker().scheduler.get_job(id)
         if(not job):
             api_assert(False, log_message="no such alarm.")
