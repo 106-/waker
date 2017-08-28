@@ -9,6 +9,8 @@ from tornado_json import schema
 from settings import ALARM_LEVELS,TIMEZONE
 from apscheduler.triggers.date import DateTrigger
 
+ISO_8601_FORMAT = "\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)"
+
 class schedules_handler(APIHandler):
     __urls__ = ["/api/schedules/?"]
     __url_names__ = []
@@ -19,9 +21,9 @@ class schedules_handler(APIHandler):
             "items": {
                 "type": "object",
                 "properties": {
-                    "time":{"type": "string"},
+                    "time":{"type": "string", "pattern":ISO_8601_FORMAT},
                     "id": {"type": "string", "pattern":"[0-9a-f]{32}"},
-                    "sound_id": {"type": "string", "pattern":"[0-9a-f]{32}"},
+                    "sound_id": {"type": ["string","null"], "pattern":"[0-9a-f]{32}"},
                     "level": {"enum":ALARM_LEVELS},
                     "repeat": {"type": "number"}
                 }
@@ -64,7 +66,7 @@ class schedules_handler(APIHandler):
             "type":"object",
             "required":["level","repeat"],
             "properties":{
-                "time":{"type":"string"},
+                "time":{"type":"string", "pattern":ISO_8601_FORMAT},
                 "sound_id":{"type":"string", "pattern":"[0-9a-f]{32}"},
                 "level":{"enum":ALARM_LEVELS},
                 "repeat":{"type":"number"}
@@ -100,7 +102,7 @@ class schedules_handler(APIHandler):
                 api_assert(False, log_message="time must be later than present.")
                 return
 
-        sound_id = ""
+        sound_id = None
         if("sound_id" in self.body):
             # TODO: ここに存在しないsound_idが来たときのエラー判定を挟む
             sound_id = self.body["sound_id"]
@@ -126,9 +128,9 @@ class schedule_handler(schedules_handler):
         output_schema = {
             "type": "object",
             "properties": {
-                "time":{"type": "string"},
+                "time":{"type": "string", "pattern":ISO_8601_FORMAT},
                 "id": {"type": "string", "pattern":"[0-9a-f]{32}"},
-                "sound_id": {"type": "string", "pattern":"[0-9a-f]{32}"},
+                "sound_id": {"type": ["string","null"], "pattern":"[0-9a-f]{32}"},
                 "level": {"enum":ALARM_LEVELS},
                 "repeat": {"type": "number"}
             }
@@ -166,7 +168,7 @@ class schedule_handler(schedules_handler):
         input_schema = {
             "type":"object",
             "properties":{
-                "time":{"type":"string"},
+                "time":{"type":"string", "pattern":ISO_8601_FORMAT},
                 "sound_id":{"type":"string", "pattern":"[0-9a-f]{32}"},
                 "level":{"enum":ALARM_LEVELS},
                 "repeat":{"type":"number"}
