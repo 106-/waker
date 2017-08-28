@@ -7,6 +7,7 @@ from tornado_json.requesthandlers import APIHandler
 from tornado_json.exceptions import api_assert
 from tornado_json import schema
 from settings import ALARM_LEVELS,TIMEZONE
+from apscheduler.triggers.date import DateTrigger
 
 class schedules_handler(APIHandler):
     __urls__ = ["/api/schedules/?"]
@@ -47,7 +48,7 @@ class schedules_handler(APIHandler):
         * `level`: type of alarm. (i.e. "alarm","notify","warning")
         * `repeat`: number of repeat sound. 0 means "repeats indefinitely".
         """
-        jobs = waker().scheduler.get_jobs()
+        jobs = filter(lambda x:isinstance(x.trigger, DateTrigger), waker().scheduler.get_jobs())
         jobs_lst = []
         for i in jobs:
             job = {
