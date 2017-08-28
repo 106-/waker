@@ -62,7 +62,7 @@ class schedules_handler(APIHandler):
     @schema.validate(
         input_schema = {
             "type":"object",
-            "required":["time","level","repeat"],
+            "required":["level","repeat"],
             "properties":{
                 "time":{"type":"string"},
                 "sound_id":{"type":"string", "pattern":"[0-9a-f]{32}"},
@@ -86,17 +86,19 @@ class schedules_handler(APIHandler):
         post new alarm schedule. returns job id.
 
         ### input
-        * `time`: ISO8601 formatted string. this value means when alarm go off.
+        * `time`: ISO8601 formatted string. this value means when alarm go off. if not set, alarm will go off immediately.
         * `sound_id`: random 32byte hexadecimal string. you can get filename->sound_id correspondence from /api/musics/. if not set this value, waker may choose music randomly from same "level".
         * `level`: type of alarm. (i.e. "alarm","notify","warning")
         * `repeat`: number of repeat sound. 0 means "repeats indefinitely".
         ### output
         job id.
         """
-        d = iso8601.parse_date(self.body["time"])
-        if d < datetime.datetime.now(tz=TIMEZONE):
-            api_assert(False, log_message="time must be later than present.")
-            return
+        d = None
+        if("time" in self.body):
+            d = iso8601.parse_date(self.body["time"])
+            if d < datetime.datetime.now(tz=TIMEZONE):
+                api_assert(False, log_message="time must be later than present.")
+                return
 
         sound_id = ""
         if("sound_id" in self.body):
@@ -109,8 +111,12 @@ class schedules_handler(APIHandler):
         if(repeat < 0):
             api_assert(False, log_message="repeat must be higer than zero.")
             return
-
-        job = waker().scheduler.add_job(waker.alarm_go_off, "date", run_date=d, kwargs={"repeat":repeat, "level":level, "sound_id":sound_id})
+        
+        job = None
+        if(d):
+            job = waker().scheduler.add_job(waker.alarm_go_off, "date", run_date=d, kwargs={"repeat":repeat, "level":level, "sound_id":sound_id})
+        else:
+            job = waker().scheduler.add_job(waker.alarm_go_off, kwargs={"repeat":repeat, "level":level, "sound_id":sound_id})
         return job.id
 
 class schedule_handler(schedules_handler):
