@@ -3,6 +3,7 @@
 import iso8601
 import datetime
 from waker import waker
+from music_controller import music_controller
 from tornado_json.requesthandlers import APIHandler
 from tornado_json.exceptions import api_assert
 from tornado_json import schema
@@ -104,8 +105,11 @@ class schedules_handler(APIHandler):
 
         sound_id = None
         if("sound_id" in self.body):
-            # TODO: ここに存在しないsound_idが来たときのエラー判定を挟む
             sound_id = self.body["sound_id"]
+            mc = music_controller()
+            if not mc.exist(sound_id):
+                api_assert(False, log_message="such sound_id is not exists.")
+                return
 
         level = self.body["level"]
 
@@ -200,7 +204,11 @@ class schedule_handler(schedules_handler):
             if(key in self.body):
                 mod_args[key] = self.body[key]
             else:
-                mod_args[key] = job.kwargs[key]
+                mod_args[key] = job.kwargs[key]            
+        mc = music_controller()
+        if not mc.exist(mod_args["sound_id"]):
+            api_assert(False, log_message="such sound_id is not exists.")
+            return
         mod_time = job.next_run_time
         if("time" in self.body):
             mod_time = iso8601.parse_date(self.body["time"])

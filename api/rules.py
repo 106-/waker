@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 from waker import waker
+from music_controller import music_controller
 from datetime import datetime
 from tornado_json.requesthandlers import APIHandler
 from tornado_json.exceptions import api_assert
@@ -117,8 +118,11 @@ class rules_hendler(APIHandler):
 
         sound_id = None
         if("sound_id" in self.body):
-            # TODO: ここに存在しないsound_idが来たときのエラー判定を挟む
             sound_id = self.body["sound_id"]
+            mc = music_controller()
+            if not mc.exist(sound_id):
+                api_assert(False, log_message="such sound_id is not exists.")
+                return
 
         level = self.body["level"]
         repeat = self.body["repeat"]
@@ -156,8 +160,10 @@ class rule_handler(rules_hendler):
                 mod_args[key] = self.body[key]
             else:
                 mod_args[key] = job.kwargs[key]
-        #TODO: ここにもsound_idのチェックが必要
-
+        mc = music_controller()
+        if not mc.exist(mod_args["sound_id"]):
+            api_assert(False, log_message="such sound_id is not exists.")
+            return
         mod_day_of_week = get_dayofweek_list_from_job(job)
         if("day_of_week" in self.body):
             mod_day_of_week = self.body["day_of_week"]
