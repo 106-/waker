@@ -22,7 +22,7 @@ class music_controller:
         return self._instance
 
     def add(self, data, sound_name, type="alarm"):
-        id = "".join([random.choice(string_src) for x in xrange(16)])
+        id = "".join([random.choice(string_src) for x in range(16)])
         m = {
             "data":data,
             "sound_name":sound_name,
@@ -32,10 +32,7 @@ class music_controller:
         self._redis.hmset(redis_music_hash_key.format(id), m)
     
     def exist(self, id):
-        if self._redis.sismember(redis_music_key, id):
-            return True
-        else:
-            return False
+        return self._redis.sismember(redis_music_key, id)
 
     def delete(self, id):
         if self._redis.sismember(redis_music_key, id):
@@ -49,17 +46,26 @@ class music_controller:
         if id is None:
             id = self._redis.srandmember(redis_music_key)
 
-        if id in self._redis.sismember(redis_music_key, id):
-            m = self._redis.hgetall(redis_music_hash_key.format(id))
+        if self._redis.sismember(redis_music_key, id):
+            keys = ["data", "sound_name", "type"]
+            m = self._get_music_dict(id, keys)
             return music(**m)
         else:
             return None
     
     def get_list(self):
         music_set = self._redis.smembers(redis_music_key)
-        get_music_list = lambda x: self._redis.hmget(redis_music_hash_key.format(x), "sound_name", "type" )
-        musics = map(get_music_list, music_set)
+        musics = []
+        for i in music_set:
+            keys = ["sound_name", "type"]
+            musics.append(self._get_music_dict(i, keys))
         return musics
+
+    def _get_music_dict(self, id, keys):
+        music_dict = {"id": id}
+        values = self._redis.hmget(redis_music_hash_key.format(id.decode("utf-8")), *keys)
+        music_dict.update(dict(zip(keys, values)))
+        return music_dict
 
 class music:
     def __init__(self, id, sound_name, type, data):
