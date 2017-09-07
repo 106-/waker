@@ -26,7 +26,10 @@ class schedules_handler(APIHandler):
                     "id": {"type": "string", "pattern":"[0-9a-f]{32}"},
                     "sound_id": {"type": ["string","null"], "pattern":"[0-9a-f]{32}"},
                     "level": {"enum":ALARM_LEVELS},
-                    "repeat": {"type": "number"}
+                    "repeat": {
+                        "type": "number", 
+                        "minimum": 0
+                    }
                 }
             }
         },
@@ -70,7 +73,10 @@ class schedules_handler(APIHandler):
                 "time":{"type":"string", "pattern":ISO_8601_FORMAT},
                 "sound_id":{"type":"string", "pattern":"[0-9a-f]{32}"},
                 "level":{"enum":ALARM_LEVELS},
-                "repeat":{"type":"number"}
+                "repeat":{
+                    "type":"number",
+                    "minimum": 0
+                }
             }
         },
         input_example = {
@@ -112,12 +118,7 @@ class schedules_handler(APIHandler):
                 return
 
         level = self.body["level"]
-
         repeat = self.body["repeat"]
-        if(repeat < 0):
-            api_assert(False, log_message="repeat must be higer than zero.")
-            return
-        
         job = None
         if(d):
             job = waker().scheduler.add_job(waker.alarm_go_off, "date", run_date=d, kwargs={"repeat":repeat, "level":level, "sound_id":sound_id})
@@ -136,7 +137,10 @@ class schedule_handler(schedules_handler):
                 "id": {"type": "string", "pattern":"[0-9a-f]{32}"},
                 "sound_id": {"type": ["string","null"], "pattern":"[0-9a-f]{32}"},
                 "level": {"enum":ALARM_LEVELS},
-                "repeat": {"type": "number"}
+                "repeat": {
+                    "type": "number",
+                    "minimum": 0
+                }
             }
         },
         output_example = {
@@ -175,7 +179,10 @@ class schedule_handler(schedules_handler):
                 "time":{"type":"string", "pattern":ISO_8601_FORMAT},
                 "sound_id":{"type":"string", "pattern":"[0-9a-f]{32}"},
                 "level":{"enum":ALARM_LEVELS},
-                "repeat":{"type":"number"}
+                "repeat":{
+                    "type":"number",
+                    "minimum": 0
+                }
             }
         },
         input_example = {
