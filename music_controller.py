@@ -21,12 +21,12 @@ class music_controller:
             self._lock.release()
         return self._instance
 
-    def add(self, data, sound_name, type="alarm"):
-        id = "".join([random.choice(string_src) for x in range(16)])
+    def add(self, data, sound_name, level="alarm"):
+        id = "".join([random.choice(string_src) for x in range(32)])
         m = {
             "data":data,
             "sound_name":sound_name,
-            "type":type
+            "level":level
         }
         self._redis.sadd(redis_music_key, id)
         self._redis.hmset(redis_music_hash_key.format(id), m)
@@ -47,7 +47,7 @@ class music_controller:
             id = self._redis.srandmember(redis_music_key)
 
         if self._redis.sismember(redis_music_key, id):
-            keys = ["data", "sound_name", "type"]
+            keys = ["data", "sound_name", "level"]
             m = self._get_music_dict(id, keys)
             return music(**m)
         else:
@@ -57,7 +57,7 @@ class music_controller:
         music_set = self._redis.smembers(redis_music_key)
         musics = []
         for i in music_set:
-            keys = ["sound_name", "type"]
+            keys = ["sound_name", "level"]
             musics.append(self._get_music_dict(i, keys))
         return musics
 
@@ -68,10 +68,10 @@ class music_controller:
         return music_dict
 
 class music:
-    def __init__(self, id, sound_name, type, data):
+    def __init__(self, id, sound_name, level, data):
         self.id = id
         self.sound_name = sound_name
-        self.type = type
+        self.level = level
         self.data = data
     
     def play(self):
