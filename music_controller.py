@@ -62,8 +62,9 @@ class music_controller:
         return musics
 
     def _get_music_dict(self, id, keys):
-        music_dict = {"id": id}
+        music_dict = {"id": id.decode("utf-8")}
         values = self._redis.hmget(redis_music_hash_key.format(id.decode("utf-8")), *keys)
+        values = map(lambda x: x.decode("utf-8"), values)
         music_dict.update(dict(zip(keys, values)))
         return music_dict
 
