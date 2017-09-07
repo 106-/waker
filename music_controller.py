@@ -31,6 +31,9 @@ class music_controller:
         self._redis.sadd(redis_music_key, id)
         self._redis.hmset(redis_music_hash_key.format(id), m)
     
+    def modify(self, id, kvdict):
+        self._redis.hmset(redis_music_hash_key.format(id), kvdict)
+
     def exist(self, id):
         return self._redis.sismember(redis_music_key, id)
 
@@ -62,10 +65,17 @@ class music_controller:
         return musics
 
     def _get_music_dict(self, id, keys):
-        music_dict = {"id": id.decode("utf-8")}
-        values = self._redis.hmget(redis_music_hash_key.format(id.decode("utf-8")), *keys)
-        values = map(lambda x: x.decode("utf-8"), values)
-        music_dict.update(dict(zip(keys, values)))
+        if hasattr(id, "decode"):
+            id = id.decode("utf-8")
+        music_dict = {"id": id}
+        values = self._redis.hmget(redis_music_hash_key.format(id), *keys)
+        
+        datas = dict(zip(keys, values))
+        for k in datas:
+            if not k == "data":
+                datas[k] = datas[k].decode("utf-8")
+        
+        music_dict.update(datas)
         return music_dict
 
 class music:
