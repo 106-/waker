@@ -4,6 +4,8 @@ from settings import REDIS_HOST, REDIS_PORT
 import threading
 import redis
 import random
+import io
+from pygame.mixer import music as pymusic
 
 string_src = "abcdef0123456789"
 redis_music_key = "waker:music"
@@ -85,5 +87,12 @@ class music:
         self.level = level
         self.data = data
     
-    def play(self):
-        pass
+    def play(self, repeat):
+        if repeat == 0:
+            repeat = -1
+        m = io.BytesIO(self.data)
+        pymusic.load(m)
+        pymusic.play(repeat)
+    
+    def stop(self):
+        pymusic.stop()
